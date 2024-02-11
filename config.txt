@@ -1,0 +1,6 @@
+Type:		"TCP"
+Host:		"127.0.0.1"
+Port:		"5762"
+
+Rate:		"1.0" (Hz)
+Timeout:	"5.0" (s)
