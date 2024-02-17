@@ -18,7 +18,7 @@ bool LoadConfig(Config& config, string filename) {
     if (line.empty()) continue;
     string param(line.begin(), line.begin() + line.find_first_of(':'));
     string value(line.begin() + line.find_first_of('"') + 1, line.begin() + line.find_last_of('"'));
-    transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {return std::tolower(c); });
+
     config[param] = value;
   }
 

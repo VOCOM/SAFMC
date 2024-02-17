@@ -1,6 +1,7 @@
-Type:		"TCP"
-Host:		"127.0.0.1"
-Port:		"5762"
+Type:		"serial"
+Host:		"COM"
+Port:		"9"
+Baud:		"115200"
 
 Rate:		"1.0" (Hz)
 Timeout:	"5.0" (s)

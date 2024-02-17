@@ -23,15 +23,21 @@ int main() {
 
   DroneComputer master(config);
 
+  // Pre-flight checks
   master.telemetry->subscribe_position([](Telemetry::Position position) {
     std::cout << "Altitude: " << position.relative_altitude_m << "m\n";
   });
 
+  // Cleared for takeoff
   master.action->arm();
-
   master.action->takeoff();
 
+  // Payload 1 [Manual]
+
+  // Target 1
+
   this_thread::sleep_for(chrono::seconds(10));
+
 
   master.action->land();
 

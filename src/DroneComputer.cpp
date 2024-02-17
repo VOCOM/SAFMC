@@ -4,12 +4,21 @@ DroneComputer::DroneComputer(Config params) :
   config(Mavsdk::ComponentType::CompanionComputer) {
   // Create MAVSDK Instance
   mavsdk = make_unique<Mavsdk>(config);
+
   // Load Configuration parameters
-  connection = params["Type"] + "://" + params["Host"] + ':' + params["Port"];
+  if (params["Type"] == "serial")
+    connection = params["Type"] + "://" + params["Host"] + params["Port"] + ':' + params["Baud"];
+  else
+    connection = params["Type"] + "://" + params["Host"] + ':' + params["Port"];
   timeout = stod(params["Timeout"]);
   rate = stod(params["Rate"]);
+
   // Initialize Systems
-  Init();
+  while (!Init()) {
+    cerr << "Initialization Failed!!!\n";
+    this_thread::sleep_for(3s);
+    cerr << "Retrying...";
+  }
 }
 
 DroneComputer::~DroneComputer() {
@@ -24,22 +33,27 @@ bool DroneComputer::Init() {
     bitRegister[ConnectionBit] = true;
     return false;
   }
+
   // Establish Connection to Autopilot
   system = mavsdk->first_autopilot(timeout);
   if (!system) {
     bitRegister[SystemBit] = true;
     return false;
   }
+
   // Establish Telemetry
   telemetry = make_unique<Telemetry>(system.value());
+
   // Establish Action package
   action = make_unique<Action>(system.value());
+
   // Set Update Rate
   auto set_rate_result = telemetry->set_rate_position(rate);
   if (set_rate_result != Telemetry::Result::Success) {
     bitRegister[RateBit] = true;
     return false;
   }
+
   // Initialization Complete
   bitRegister[ReadyBit] = true;
   return true;

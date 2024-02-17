@@ -10,13 +10,16 @@
 
 #include <Utility.hpp>
 #include <bitset>
+#include <iostream>
 #include <map>
 #include <mavsdk.h>
 #include <plugins/action/action.h>
 #include <plugins/telemetry/telemetry.h>
+#include <thread>
 
 using namespace std;
 using namespace mavsdk;
+using namespace chrono_literals;
 
 constexpr size_t maxBits = 0xFF;
 constexpr unsigned char ReadyBit = 0x00;
