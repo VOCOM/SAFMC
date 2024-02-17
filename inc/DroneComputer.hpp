@@ -9,49 +9,68 @@
 #pragma once
 
 #include <Utility.hpp>
+
+#include <mavsdk/mavsdk.h>
+#include <mavsdk/plugins/action/action.h>
+#include <mavsdk/plugins/mission/mission.h>
+#include <mavsdk/plugins/telemetry/telemetry.h>
+
 #include <bitset>
 #include <iostream>
 #include <map>
-#include <mavsdk.h>
-#include <plugins/action/action.h>
-#include <plugins/telemetry/telemetry.h>
 #include <thread>
 
 using namespace std;
 using namespace mavsdk;
 using namespace chrono_literals;
 
-constexpr size_t maxBits = 0xFF;
-constexpr unsigned char ReadyBit = 0x00;
-constexpr unsigned char ConnectionBit = 0x01;
-constexpr unsigned char SystemBit = 0x02;
-constexpr unsigned char RateBit = 0x03;
-
-using BitRegister = bitset<maxBits>;
-
 class DroneComputer {
 public:
+  typedef unsigned char const bit;
+  static bit maxBits = 0xFF;
+  static bit ReadyBit = 0x00;
+  static bit ConnectionErrorBit = 0x01;
+  static bit SystemErrorBit = 0x02;
+  static bit RateErrorBit = 0x03;
+  static bit MissionCompleteBit = 0x04;
+  using BitRegister = bitset<maxBits>;
+
   DroneComputer() = delete;
   DroneComputer(Config params);
   ~DroneComputer();
 
+  // Status
   bool Ready() const { return bitRegister[ReadyBit]; }
 
-  unique_ptr<Mavsdk> mavsdk;
-  unique_ptr<Action> action;
-  unique_ptr<Telemetry> telemetry;
+  // Utility
+  void SetState(State newState);
+  void LoadMissionPlan(Mission::MissionPlan missionPlan);
+  void AttachTelemetryCallback(void(*callback)(Telemetry::Position position));
+  void AttachMissionCallback(void(*callback)(Mission::Result result));
+
+  // Flight Controls
+  void Takeoff();
+  void Land();
+  void ExecutePlan();
 
 private:
   void Reset();
   bool Init();
 
-  BitRegister bitRegister;
+  State state;
 
   double rate;
   double timeout;
   string connection;
-
+  BitRegister bitRegister;
   Mavsdk::Configuration config;
+
+  unique_ptr<Action> action;
+  unique_ptr<Mavsdk> mavsdk;
+  unique_ptr<Telemetry> telemetry;
+  unique_ptr<Mission> mission;
+
+  void(*missionCallback)(Mission::Result);
 
   optional<shared_ptr<mavsdk::System>> system;
 };

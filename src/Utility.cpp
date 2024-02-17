@@ -8,16 +8,23 @@
 
 #include <Utility.hpp>
 
-bool LoadConfig(Config& config, string filename) {
-  fstream f(filename);
-  if (!f.is_open()) return false;
+#include <iosfwd>
+#include <iostream>
+#include <string>
 
-  string line;
+bool LoadConfig(Config& config, std::string filename) {
+  std::fstream f(filename);
+  if (!f.is_open()) {
+    std::cerr << "Failed to load configuration file!!!\n";
+    return false;
+  }
+
+  std::string line;
   while (!f.eof()) {
     getline(f, line);
     if (line.empty()) continue;
-    string param(line.begin(), line.begin() + line.find_first_of(':'));
-    string value(line.begin() + line.find_first_of('"') + 1, line.begin() + line.find_last_of('"'));
+    std::string param(line.begin(), line.begin() + line.find_first_of(':'));
+    std::string value(line.begin() + line.find_first_of('"') + 1, line.begin() + line.find_last_of('"'));
 
     config[param] = value;
   }

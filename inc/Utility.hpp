@@ -13,8 +13,16 @@
 #include <map>
 #include <string>
 
-using namespace std;
+using Config = std::map<std::string, std::string>;
 
-using Config = map<string, string>;
+bool LoadConfig(Config& config, std::string filename);
 
-bool LoadConfig(Config& config, string filename);
+typedef enum State {
+  Idle, Ready,
+  Pickup1, Target1,
+  Pickup2, Target2,
+  Pickup3, Target3,
+  Pickup4, Target4,
+  Pickup5, Target5,
+  Pickup6, Target6,
+};

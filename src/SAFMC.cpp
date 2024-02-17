@@ -6,44 +6,126 @@
  * \date   12/02/2024
  *********************************************************************/
 
+#pragma once
+
 #include <DroneComputer.hpp>
+#include <MissionPlanner.hpp>
 #include <Utility.hpp>
-#include <chrono>
+
+#include <mavsdk/plugins/mission/mission.h>
+#include <mavsdk/plugins/telemetry/telemetry.h>
+
+#include <cstdlib>
 #include <iostream>
 #include <thread>
 
 using namespace mavsdk;
+using namespace chrono_literals;
+
+typedef mavsdk::Telemetry::Position Position;
+typedef mavsdk::Mission::MissionItem::VehicleAction VehicleAction;
+
+void AltitudeStatus(Position position) {
+  std::cout << "Altitude: " << position.relative_altitude_m << "m\n";
+}
+void MissionStatus(Mission::Result result) {
+  if (result != Mission::Result::Success) {
+
+  }
+}
+
+void AutoLoad() {
+  for (unsigned char i {}; i < 5; i++) {
+    std::cout << "Waiting for auto load...\n";
+    this_thread::sleep_for(1s);
+  }
+}
+void ManualLoad() {
+  // TODO: Replace with manual trigger
+  for (unsigned char i {}; i < 5; i++) {
+    std::cout << "Waiting for manual load...\n";
+    this_thread::sleep_for(1s);
+  }
+}
+void AlignAruco() {
+  for (unsigned char i {}; i < 5; i++) {
+    std::cout << "Aligning with aruco...\n";
+    this_thread::sleep_for(1s);
+  }
+}
+void ReleasePayload() {
+  std::cout << "Releasing payload!\n";
+  this_thread::sleep_for(5s);
+}
 
 int main() {
+  // Load Configurations
   Config config;
-  if (!LoadConfig(config, "config.txt")) {
-    std::cerr << "Failed to load configuration file!!!\n";
-    return 1;
-  }
+  if (!LoadConfig(config, "config.txt")) exit(EXIT_FAILURE);
 
-  DroneComputer master(config);
+  // Initialise Leader
+  DroneComputer leader(config);
 
-  // Pre-flight checks
-  master.telemetry->subscribe_position([](Telemetry::Position position) {
-    std::cout << "Altitude: " << position.relative_altitude_m << "m\n";
-  });
+  // Attach Callbacks
+  leader.AttachTelemetryCallback(AltitudeStatus);
 
-  // Cleared for takeoff
-  master.action->arm();
-  master.action->takeoff();
+  // Initialise Mission Planner
+  MissionPlanner planner;
+  Position pickup, dropoff;
 
-  // Payload 1 [Manual]
+  // First mission (Manual Loading)
+  leader.SetState(Pickup1);
+  pickup = { 0,0,0,0 };
+  planner.AddPoint(pickup, 1, VehicleAction::Takeoff);
+  leader.LoadMissionPlan(planner.GetPlan());
+  planner.Clear();
 
-  // Target 1
+  // Go to First Loading Point #Blocking
+  leader.ExecutePlan();
 
-  this_thread::sleep_for(chrono::seconds(10));
+  // Reached Loading Point
+  ManualLoad();
 
+  // Deliver first parcel
+  leader.SetState(Target1);
+  dropoff = { 1,1,1,1 };
+  planner.AddPoint(dropoff, 1);
+  leader.LoadMissionPlan(planner.GetPlan());
+  planner.Clear();
 
-  master.action->land();
+  // Go to First Drop Point #Blocking
+  leader.ExecutePlan();
 
-  while (master.telemetry->in_air());
+  // Reached Drop Point
+  AlignAruco();
+  ReleasePayload();
+
+  // Second mission
+  leader.SetState(Pickup2);
+  pickup = { 2,2,2,2 };
+  planner.AddPoint(pickup, 1);
+  leader.LoadMissionPlan(planner.GetPlan());
+  planner.Clear();
+
+  // Go to Pickup
+  leader.ExecutePlan();
+
+  // Reached Loading Point
+  AutoLoad();
+
+  // Deliver parcel
+  leader.SetState(Target2);
+  dropoff = { 3,3,3,3 };
+  planner.AddPoint(dropoff, 1);
+  leader.LoadMissionPlan(planner.GetPlan());
+  planner.Clear();
+
+  // Go to Drop Point #Blocking
+  leader.ExecutePlan();
+
+  // Land
+  leader.Land();
 
   return 0;
 }
-
 
