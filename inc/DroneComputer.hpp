@@ -12,7 +12,9 @@
 
 #include <mavsdk/mavsdk.h>
 #include <mavsdk/plugins/action/action.h>
+#include <mavsdk/plugins/manual_control/manual_control.h>
 #include <mavsdk/plugins/mission/mission.h>
+#include <mavsdk/plugins/offboard/offboard.h>
 #include <mavsdk/plugins/telemetry/telemetry.h>
 
 #include <bitset>
@@ -53,9 +55,16 @@ public:
   void Land();
   void ExecutePlan();
 
+  void StartOffboard();
+  void Track(float x, float y, float z);
+  void SetVelocity(float forward, float right, float down, float yaw);
+  void StopOffboard();
+
 private:
   void Reset();
   bool Init();
+
+  float velocity = 1;
 
   State state;
 
@@ -69,6 +78,7 @@ private:
   unique_ptr<Mavsdk> mavsdk;
   unique_ptr<Telemetry> telemetry;
   unique_ptr<Mission> mission;
+  unique_ptr<Offboard> offboard;
 
   void(*missionCallback)(Mission::Result);
 

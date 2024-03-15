@@ -9,7 +9,6 @@
 #pragma once
 
 #include <DroneComputer.hpp>
-#include <MissionPlanner.hpp>
 #include <Utility.hpp>
 
 #include <mavsdk/plugins/mission/mission.h>
@@ -25,7 +24,7 @@ using namespace chrono_literals;
 typedef mavsdk::Telemetry::Position Position;
 typedef mavsdk::Mission::MissionItem::VehicleAction VehicleAction;
 
-void AltitudeStatus(Position position) {
+void PositionStatus(Position position) {
   std::cout << "Altitude: " << position.relative_altitude_m << "m\n";
 }
 void MissionStatus(Mission::Result result) {
@@ -67,8 +66,36 @@ int main() {
   DroneComputer leader(config);
 
   // Attach Callbacks
-  leader.AttachTelemetryCallback(AltitudeStatus);
+  leader.AttachTelemetryCallback(PositionStatus);
 
+  // Takeoff [5s]
+  leader.Takeoff();
+
+  // Start Manual Control
+  leader.StartOffboard();
+
+  // Find 1st Aruco [Loading point]
+  // #TODO: INSERT ARUCO CODE HERE
+
+  // Manual Load
+  // #TODO: INSERT MANUAL LOAD TRIGGER CODE HERE
+
+  // Fly to 1st Drop point [Dead Reckoning]
+  leader.SetVelocity(1, 0, 0, 0);
+
+  // Find 2nd Aruco [Drop point]
+  // #TODO: INSERT ARUCO CODE HERE
+
+  // Drop Load
+  // #TODO: INSERT DROP TRIGGER CODE HERE
+
+  // Stop Manual Control
+  leader.StopOffboard();
+
+  // Land
+  leader.Land();
+
+#ifdef AUTO
   // Initialise Mission Planner
   MissionPlanner planner;
   Position pickup, dropoff;
@@ -125,6 +152,7 @@ int main() {
 
   // Land
   leader.Land();
+#endif // AUTO
 
   return 0;
 }
