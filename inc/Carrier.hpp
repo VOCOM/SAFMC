@@ -2,7 +2,7 @@
 #pragma once
 
 #include <stdio.h>
-#include <wiringPi.h>
+//#include <wiringPi.h>
 
 class Carrier {
 public:

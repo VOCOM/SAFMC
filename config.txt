@@ -1,6 +1,6 @@
-Type:		"serial"
-Host:		"COM"
-Port:		"9"
+Type:		"tcp"       #tcp,udp,Serial
+Host:		"127.0.0.1" #127.0.0.1,COM
+Port:		"5762"      #5760,14540,3
 Baud:		"115200"
 
 Rate:		"1.0" (Hz)

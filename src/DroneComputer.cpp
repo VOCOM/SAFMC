@@ -12,6 +12,7 @@
 #include <mavsdk.h>
 #include <mavsdk/plugins/action/action.h>
 #include <mavsdk/plugins/mission/mission.h>
+#include <mavsdk/plugins/offboard/offboard.h>
 #include <mavsdk/plugins/telemetry/telemetry.h>
 
 #include <connection_result.h>
@@ -83,7 +84,10 @@ bool DroneComputer::Init() {
   action = make_unique<Action>(system.value());
 
   // Establish Mission Handler
-  mission = make_unique<Mission>(system.value());
+  //mission = make_unique<Mission>(system.value());
+
+  // Establish Offboard Handler
+  offboard = make_unique<Offboard>(system.value());
 
   // Set Update Rate
   auto set_rate_result = telemetry->set_rate_position(rate);
@@ -118,6 +122,7 @@ void DroneComputer::AttachMissionCallback(void(*callback)(Mission::Result result
 void DroneComputer::Takeoff() {
   action->arm();
   action->takeoff();
+  this_thread::sleep_for(5s);
 }
 
 void DroneComputer::Land() {
@@ -129,4 +134,28 @@ void DroneComputer::ExecutePlan() {
   // Execute in Blocking mode
   auto result = mission->start_mission();
   if (result == Mission::Result::Success) bitRegister[MissionCompleteBit] = true;
+}
+
+void DroneComputer::StartOffboard() {
+  Offboard::VelocityBodyYawspeed stay {};
+  offboard->set_velocity_body(stay);
+  offboard->start();
+}
+void DroneComputer::Track(float x, float y, float depth) {
+  Offboard::VelocityBodyYawspeed to_target {};
+  to_target.forward_m_s = depth;
+  to_target.right_m_s = x;
+  to_target.down_m_s = y;
+  offboard->set_velocity_body(to_target);
+}
+void DroneComputer::SetVelocity(float forward, float right, float down, float yaw) {
+  Offboard::VelocityBodyYawspeed velocity {};
+  velocity.forward_m_s = forward;
+  velocity.right_m_s = right;
+  velocity.down_m_s = down;
+  velocity.yawspeed_deg_s = yaw;
+  offboard->set_velocity_body(velocity);
+}
+void DroneComputer::StopOffboard() {
+  offboard->stop();
 }
