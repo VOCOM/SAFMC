@@ -24,6 +24,6 @@ public:
   MissionPlan GetPlan();
   void Clear();
 
-private:
   MissionPlan plan;
+private:
 };

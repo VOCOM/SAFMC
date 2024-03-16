@@ -11,12 +11,17 @@
 #include <DroneComputer.hpp>
 #include <Utility.hpp>
 
+#include <mavsdk/plugins/manual_control/manual_control.h>
 #include <mavsdk/plugins/mission/mission.h>
+#include <mavsdk/plugins/mocap/mocap.h>
 #include <mavsdk/plugins/telemetry/telemetry.h>
 
+#include <MissionPlanner.hpp>
 #include <cstdlib>
 #include <iostream>
 #include <thread>
+
+#define Wait(x) this_thread::sleep_for(x)
 
 using namespace mavsdk;
 using namespace chrono_literals;
@@ -46,11 +51,27 @@ void ManualLoad() {
     this_thread::sleep_for(1s);
   }
 }
-void AlignAruco() {
-  for (unsigned char i {}; i < 5; i++) {
-    std::cout << "Aligning with aruco...\n";
-    this_thread::sleep_for(1s);
+void AlignAruco(DroneComputer& drone) {
+  // Load Velocities
+  double x {}, y {}, z {};
+
+  // Success Condition
+  bool inRange {};
+
+  double tolerance { 0.5 };
+
+  while (!inRange) {
+    // Get Vector
+    drone.Track(x, y, z);
+
+    Wait(100ms);
+
+    // Check for tolerance
+    if (x < tolerance && y < tolerance && z < tolerance) inRange = true;
   }
+
+  // Halt
+  drone.SetVelocity(0, 0, 0, 0);
 }
 void ReleasePayload() {
   std::cout << "Releasing payload!\n";
@@ -59,7 +80,7 @@ void ReleasePayload() {
 
 /**
  * @brief Main Control Loop
- * @return 
+ * @return
 */
 int main() {
   // Load Configurations
@@ -75,11 +96,40 @@ int main() {
   // Attach Callbacks
   leader.AttachTelemetryCallback(PositionStatus);
 
-  // Takeoff [5s]
-  leader.Takeoff();
+  while (!leader.telemetry->health_all_ok()) {
+    std::cout << "Waiting for system to be ready\n";
+    Wait(1s);
+  }
 
+#ifdef MANUAL
+  ManualControl manual(leader.system.value());
+
+  manual.set_manual_control_input(0.f, 0.f, 0.5f, 0.f);
+  manual.start_position_control();
+
+  cout << "Arming!!!\n";
+  leader.action->arm();
+
+  cout << "Taking off!!!\n";
+  for (int i {}; i < 250; i++) {
+    manual.set_manual_control_input(0.f, 0.f, 1.f, 0.f);
+    Wait(100ms);
+  }
+  //leader.action->takeoff();
+
+  Wait(5s);
+
+  cout << "Disarming!!!\n";
+  leader.action->disarm();
+
+
+  //cout << "Taking Off\n";
+  // Takeoff [5s]
+  //leader.Takeoff();
+
+  //cout << "Starting Offboard Control\n";
   // Start Manual Control
-  leader.StartOffboard();
+  //leader.StartOffboard();
 
   // Find 1st Aruco [Loading point]
   // #TODO: INSERT ARUCO CODE HERE
@@ -88,7 +138,7 @@ int main() {
   // #TODO: INSERT MANUAL LOAD TRIGGER CODE HERE
 
   // Fly to 1st Drop point [Dead Reckoning]
-  leader.SetVelocity(1, 0, 0, 0);
+  //leader.SetVelocity(0, 0, 0, 0);
 
   // Find 2nd Aruco [Drop point]
   // #TODO: INSERT ARUCO CODE HERE
@@ -96,13 +146,19 @@ int main() {
   // Drop Load
   // #TODO: INSERT DROP TRIGGER CODE HERE
 
+  //cout << "Stopping Offboard Control\n";
   // Stop Manual Control
-  leader.StopOffboard();
+  //leader.StopOffboard();
 
+  //cout << "Landing\n";
   // Land
-  leader.Land();
+  //leader.Land();
+#endif
 
+#define AUTO
 #ifdef AUTO
+  leader.Takeoff();
+
   // Initialise Mission Planner
   MissionPlanner planner;
   Position pickup, dropoff;
@@ -131,7 +187,7 @@ int main() {
   leader.ExecutePlan();
 
   // Reached Drop Point
-  AlignAruco();
+  //AlignAruco();
   ReleasePayload();
 
   // Second mission

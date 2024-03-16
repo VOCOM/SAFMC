@@ -22,7 +22,7 @@
 #include <thread>
 
 bool ConfigContains(Config param, std::string key) {
-  return param.find(key) == param.end();
+  return param.find(key) != param.end();
 }
 
 DroneComputer::DroneComputer(Config params)
@@ -39,7 +39,7 @@ DroneComputer::DroneComputer(Config params)
   }
   if (ConfigContains(params, "Timeout")) {
     timeout = stod(params["Timeout"]);
-} 
+  }
   if (ConfigContains(params, "Rate")) {
     rate = stod(params["Rate"]);
   }
@@ -50,7 +50,8 @@ DroneComputer::DroneComputer(Config params)
   // Initialize Systems
   int i = 1;
   while (!Init() && i < tries) {
-    cerr << "Initialization Failed!!!\n";
+    cerr << "Initialization Failed\n";
+    cerr << "On Port: " << connection << '\n';
     this_thread::sleep_for(3s);
     cerr << "Retrying... Tried: " << i << " times.\n";
     i++;
@@ -121,6 +122,7 @@ void DroneComputer::AttachMissionCallback(void(*callback)(Mission::Result result
 
 void DroneComputer::Takeoff() {
   action->arm();
+  action->set_takeoff_altitude(1);
   action->takeoff();
   this_thread::sleep_for(5s);
 }
@@ -137,15 +139,17 @@ void DroneComputer::ExecutePlan() {
 }
 
 void DroneComputer::StartOffboard() {
+  Offboard::PositionNedYaw origin {};
   Offboard::VelocityBodyYawspeed stay {};
   offboard->set_velocity_body(stay);
+  offboard->set_position_ned(origin);
   offboard->start();
 }
-void DroneComputer::Track(float x, float y, float depth) {
+void DroneComputer::Track(float x, float y, float z) {
   Offboard::VelocityBodyYawspeed to_target {};
-  to_target.forward_m_s = depth;
+  to_target.forward_m_s = -y;
   to_target.right_m_s = x;
-  to_target.down_m_s = y;
+  to_target.down_m_s = z;
   offboard->set_velocity_body(to_target);
 }
 void DroneComputer::SetVelocity(float forward, float right, float down, float yaw) {

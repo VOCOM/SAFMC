@@ -60,6 +60,9 @@ public:
   void SetVelocity(float forward, float right, float down, float yaw);
   void StopOffboard();
 
+  unique_ptr<Action> action;
+  unique_ptr<Telemetry> telemetry;
+  optional<shared_ptr<mavsdk::System>> system;
 private:
   void Reset();
   bool Init();
@@ -75,14 +78,11 @@ private:
   BitRegister bitRegister;
   Mavsdk::Configuration config;
 
-  unique_ptr<Action> action;
   unique_ptr<Mavsdk> mavsdk;
-  unique_ptr<Telemetry> telemetry;
   unique_ptr<Mission> mission;
   unique_ptr<Offboard> offboard;
 
   void(*missionCallback)(Mission::Result);
 
-  optional<shared_ptr<mavsdk::System>> system;
 };
 
