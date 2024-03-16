@@ -18,6 +18,7 @@ using Config = std::map<std::string, std::string>;
 bool LoadConfig(Config& config, std::string filename);
 
 typedef enum State {
+  Uninitialized,
   Idle, Ready,
   Pickup1, Target1,
   Pickup2, Target2,

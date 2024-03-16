@@ -59,9 +59,10 @@ private:
 
   State state;
 
-  double rate;
-  double timeout;
+  double rate = 1.0f;
+  double timeout = 1.0f;
   string connection;
+  int tries = 5;
   BitRegister bitRegister;
   Mavsdk::Configuration config;
 

@@ -20,24 +20,39 @@
 #include <string>
 #include <thread>
 
+bool ConfigContains(Config param, std::string key) {
+  return param.find(key) == param.end();
+}
+
 DroneComputer::DroneComputer(Config params)
   : config(Mavsdk::ComponentType::CompanionComputer), state(Idle) {
   // Create MAVSDK Instance
   mavsdk = make_unique<Mavsdk>(config);
 
   // Load Configuration parameters
-  if (params["Type"] == "serial")
-    connection = params["Type"] + "://" + params["Host"] + params["Port"] + ':' + params["Baud"];
-  else
-    connection = params["Type"] + "://" + params["Host"] + ':' + params["Port"];
-  timeout = stod(params["Timeout"]);
-  rate = stod(params["Rate"]);
+  if (ConfigContains(params, "Type")) {
+    if (params["Type"] == "serial")
+      connection = params["Type"] + "://" + params["Host"] + params["Port"] + ':' + params["Baud"];
+    else
+      connection = params["Type"] + "://" + params["Host"] + ':' + params["Port"];
+  }
+  if (ConfigContains(params, "Timeout")) {
+    timeout = stod(params["Timeout"]);
+} 
+  if (ConfigContains(params, "Rate")) {
+    rate = stod(params["Rate"]);
+  }
+  if (ConfigContains(params, "Tries")) {
+    tries = stoi(params["Tries"]);
+  }
 
   // Initialize Systems
-  while (!Init()) {
+  int i = 1;
+  while (!Init() && i < tries) {
     cerr << "Initialization Failed!!!\n";
     this_thread::sleep_for(3s);
-    cerr << "Retrying...\n";
+    cerr << "Retrying... Tried: " << i << " times.\n";
+    i++;
   }
 }
 

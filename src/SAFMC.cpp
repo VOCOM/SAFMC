@@ -58,6 +58,10 @@ void ReleasePayload() {
   this_thread::sleep_for(5s);
 }
 
+/**
+ * @brief Main Control Loop
+ * @return 
+*/
 int main() {
   // Load Configurations
   Config config;
@@ -65,6 +69,9 @@ int main() {
 
   // Initialise Leader
   DroneComputer leader(config);
+
+  // Missing System Guard
+  if (!leader.Ready())exit(EXIT_FAILURE);
 
   // Attach Callbacks
   leader.AttachTelemetryCallback(AltitudeStatus);
